@@ -6,6 +6,7 @@ http:
   
 database:
   pg_url: postgres://user:pass@localhost:5432/postgres?sslmode=disable
+  max_pool_size: 2
 
 logger:
   log_level: "debug"

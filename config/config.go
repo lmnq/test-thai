@@ -32,7 +32,8 @@ type (
 
 	// DB Postgres
 	Db struct {
-		PgURL string `env-required:"true" yaml:"pg_url" env:"PG_URL"`
+		PgURL       string `env-required:"true" yaml:"pg_url" env:"PG_URL"`
+		MaxPoolSize int    `env-required:"true" yaml:"max_pool_size" env:"PG_MAX_POOL_SIZE"`
 	}
 )
 
