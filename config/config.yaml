@@ -1,0 +1,11 @@
+app:
+  name: "test-thai"
+
+http:
+  port: 8080
+  
+database:
+  pg_url: postgres://user:pass@localhost:5432/postgres?sslmode=disable
+
+logger:
+  log_level: "debug"
