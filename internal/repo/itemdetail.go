@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/lmnq/test-thai/database/postgres"
@@ -63,9 +64,9 @@ func (r *ItemDetailRepo) Create(ctx context.Context, itemDetail *model.ItemDetai
 		itemDetail.Price,
 		itemDetail.Sort,
 	).Scan(&res)
-	if isUniqueConstraintError(err) {
-		return 0, errs.ErrUniqueConstraint
-	}
+	// if isUniqueConstraintError(err) {
+	// 	return 0, errs.ErrUniqueConstraint
+	// }
 	if err != nil {
 		return 0, err
 	}
@@ -125,6 +126,17 @@ func (r *ItemDetailRepo) Get(ctx context.Context, id int) (*model.ItemDetailView
 	return &itemDetailView, nil
 }
 
+func (r *ItemDetailRepo) Exists(ctx context.Context, id int) (bool, error) {
+	var result bool
+	q := `SELECT EXISTS (SELECT 1 FROM tbl_item_details WHERE id = $1 AND deleted_at IS NULL)`
+	err := r.Pool.QueryRow(ctx, q, id).Scan(&result)
+	if err != nil {
+		return false, err
+	}
+
+	return result, err
+}
+
 func (r *ItemDetailRepo) GetAllFilter(ctx context.Context, filter *model.ItemDetailFilter) ([]*model.ItemDetailView, error) {
 	var itemDetailViews []*model.ItemDetailView
 	// join tbl_items and tbl_categories and tbl_groups to get itemDetailView
@@ -150,20 +162,20 @@ func (r *ItemDetailRepo) GetAllFilter(ctx context.Context, filter *model.ItemDet
 	`
 	var queryParams []interface{}
 	if filter.ID != nil {
-		q += " AND id = $1"
 		queryParams = append(queryParams, filter.ID)
+		q += fmt.Sprintf(" AND id = $%d", len(queryParams))
 	}
 	if filter.ItemName != nil {
-		q += " AND i.item_name = $2"
 		queryParams = append(queryParams, filter.ItemName)
+		q += fmt.Sprintf(" AND i.item_name = $%d", len(queryParams))
 	}
 	if filter.CategoryName != nil {
-		q += " AND c.category_name = $3"
 		queryParams = append(queryParams, filter.CategoryName)
+		q += fmt.Sprintf(" AND c.category_name = $%d", len(queryParams))
 	}
 	if filter.GroupName != nil {
-		q += " AND g.group_name = $4"
 		queryParams = append(queryParams, filter.GroupName)
+		q += fmt.Sprintf(" AND g.group_name = $%d", len(queryParams))
 	}
 
 	rows, err := r.Pool.Query(ctx, q, queryParams...)
@@ -202,22 +214,48 @@ func (r *ItemDetailRepo) GetAllFilter(ctx context.Context, filter *model.ItemDet
 	return itemDetailViews, nil
 }
 
-func (r *ItemDetailRepo) Update(ctx context.Context, id int, itemDetail *model.ItemDetail) error {
-	// updated_at will be automatically updated by postgres trigger function
-	q := `UPDATE tbl_item_details 
+func (r *ItemDetailRepo) Update(ctx context.Context, id int, itemName string, itemDetail *model.ItemDetail) error {
+	tx, err := r.Pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback(ctx)
+		}
+	}()
+	defer func() {
+		if tx.Conn() != nil {
+			tx.Conn().Close(ctx)
+		}
+	}()
+
+	// get item_id by current item_detail.id, then update items.item_name
+	var itemID int
+	q := `SELECT item_id FROM tbl_item_details WHERE id = $1 AND deleted_at IS NULL`
+	err = tx.QueryRow(ctx, q, id).Scan(&itemID)
+	if err != nil {
+		return err
+	}
+
+	q = `UPDATE tbl_items SET item_name = $1 WHERE id = $2`
+	_, err = tx.Exec(ctx, q, itemName, itemID)
+	if err != nil {
+		return err
+	}
+
+	q = `UPDATE tbl_item_details
 		SET 
-			item_id = $1,
-			category_id = $2,
-			group_id = $3,
-			cost = $4,
-			price = $5,
-			sort = $6,
+			category_id = $1,
+			group_id = $2,
+			cost = $3,
+			price = $4,
+			sort = $5,
 			updated_at = now()
-		WHERE id = $7
+		WHERE id = $6
 		AND deleted_at IS NULL
 	`
-	result, err := r.Pool.Exec(ctx, q,
-		itemDetail.ItemID,
+	_, err = tx.Exec(ctx, q,
 		itemDetail.CategoryID,
 		itemDetail.GroupID,
 		itemDetail.Cost,
@@ -228,8 +266,9 @@ func (r *ItemDetailRepo) Update(ctx context.Context, id int, itemDetail *model.I
 	if err != nil {
 		return err
 	}
-	if result.RowsAffected() == 0 {
-		return errs.ErrNotFound
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
 	}
 
 	return nil

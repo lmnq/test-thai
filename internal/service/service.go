@@ -53,10 +53,10 @@ type (
 	}
 
 	ItemDetail interface {
-		Create(ctx context.Context, itemDetail *model.ItemDetail, itemName, groupName, categoryName string) (int, errs.Error)  // create new item (if needed) and new item detail
-		Get(ctx context.Context, id int) (*model.ItemDetailView, errs.Error)                                                   // get item detail by id
-		GetAllFilter(ctx context.Context, filter *model.ItemDetailFilter) ([]*model.ItemDetailView, errs.Error)                // get item detail list by filter
-		Update(ctx context.Context, id int, itemDetail *model.ItemDetail, itemName, groupName, categoryName string) errs.Error // update item detail by id
-		Delete(ctx context.Context, id int) errs.Error                                                                         // delete item detail by id
+		Create(ctx context.Context, itemDetail *model.ItemDetail, itemName string) (int, errs.Error)            // create new item (if needed) and new item detail
+		Get(ctx context.Context, id int) (*model.ItemDetailView, errs.Error)                                    // get item detail by id
+		GetAllFilter(ctx context.Context, filter *model.ItemDetailFilter) ([]*model.ItemDetailView, errs.Error) // get item detail list by filter
+		Update(ctx context.Context, id int, itemName string, itemDetail *model.ItemDetail) errs.Error           // update item detail by id
+		Delete(ctx context.Context, id int) errs.Error                                                          // delete item detail by id
 	}
 )

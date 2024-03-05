@@ -73,6 +73,17 @@ func (r *ItemRepo) GetIDByName(ctx context.Context, name string) (int, error) {
 	return itemID, nil
 }
 
+func (r *ItemRepo) Exists(ctx context.Context, id int) (bool, error) {
+	var result bool
+	q := `SELECT EXISTS (SELECT 1 FROM tbl_items WHERE id = $1 AND deleted_at IS NULL)`
+	err := r.Pool.QueryRow(ctx, q, id).Scan(&result)
+	if err != nil {
+		return false, err
+	}
+
+	return result, err
+}
+
 func (r *ItemRepo) GetAll(ctx context.Context) ([]*model.Item, error) {
 	var items []*model.Item
 	q := `SELECT 
@@ -118,8 +129,12 @@ func (r *ItemRepo) Update(ctx context.Context, id int, name string) error {
 		SET item_name = $1,
 		updated_at = now()
 		WHERE id = $2
+		AND deleted_at IS NULL
 	`
 	result, err := r.Pool.Exec(ctx, q, name, id)
+	if isUniqueConstraintError(err) {
+		return errs.ErrUniqueConstraint
+	}
 	if err != nil {
 		return err
 	}

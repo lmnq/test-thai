@@ -60,18 +60,15 @@ func (r *CategoryRepo) Get(ctx context.Context, id int) (*model.Category, error)
 	return &category, nil
 }
 
-func (r *CategoryRepo) GetIDByName(ctx context.Context, name string) (int, error) {
-	var categoryID int
-	q := `SELECT id FROM tbl_categories WHERE category_name = $1 AND deleted_at IS NULL`
-	err := r.Pool.QueryRow(ctx, q, name).Scan(&categoryID)
-	if err == pgx.ErrNoRows {
-		return 0, errs.ErrNotFound
-	}
+func (r *CategoryRepo) Exists(ctx context.Context, id int) (bool, error) {
+	var result bool
+	q := `SELECT EXISTS (SELECT 1 FROM tbl_categories WHERE id = $1 AND deleted_at IS NULL)`
+	err := r.Pool.QueryRow(ctx, q, id).Scan(&result)
 	if err != nil {
-		return 0, err
+		return false, err
 	}
 
-	return categoryID, nil
+	return result, err
 }
 
 func (r *CategoryRepo) GetAll(ctx context.Context) ([]*model.Category, error) {
@@ -122,6 +119,9 @@ func (r *CategoryRepo) Update(ctx context.Context, id int, name string) error {
 		AND deleted_at IS NULL
 	`
 	result, err := r.Pool.Exec(ctx, q, name, id)
+	if isUniqueConstraintError(err) {
+		return errs.ErrUniqueConstraint
+	}
 	if err != nil {
 		return err
 	}

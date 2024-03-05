@@ -32,17 +32,16 @@ func NewItemDetailService(
 }
 
 func (s *ItemDetailService) Create(ctx context.Context,
-	itemDetail *model.ItemDetail,
-	itemName, groupName, categoryName string,
+	itemDetail *model.ItemDetail, itemName string,
 ) (int, errs.Error) {
 	errMsg := ""
 	switch {
 	case itemName == "":
 		errMsg = "item name is empty"
-	case groupName == "":
-		errMsg = "group name is empty"
-	case categoryName == "":
-		errMsg = "category name is empty"
+	case itemDetail.GroupID <= 0:
+		errMsg = "invalid group id"
+	case itemDetail.CategoryID <= 0:
+		errMsg = "invalid category id"
 	case itemDetail.Cost <= 0:
 		errMsg = "cost must be greater than 0"
 	case itemDetail.Price <= 0:
@@ -58,39 +57,37 @@ func (s *ItemDetailService) Create(ctx context.Context,
 		}
 	}
 
-	groupID, err := s.groupRepo.GetIDByName(ctx, groupName)
-	if err == errs.ErrNotFound {
+	groupIDExists, err := s.groupRepo.Exists(ctx, itemDetail.GroupID)
+	if !groupIDExists {
 		return 0, errs.Error{
-			Err:     fmt.Errorf("get group id by name error: %w", err),
+			Err:     fmt.Errorf("group does not exist"),
 			Code:    400,
 			Message: fmt.Sprintf("%s: group does not exist", errs.StatusBadRequestMessage),
 		}
 	}
 	if err != nil {
 		return 0, errs.Error{
-			Err:     fmt.Errorf("get group id by name error: %w", err),
+			Err:     fmt.Errorf("check if group exists error: %w", err),
 			Code:    500,
 			Message: errs.StatusInternalServerErrorMessage,
 		}
 	}
-	itemDetail.GroupID = groupID
 
-	categoryID, err := s.categoryRepo.GetIDByName(ctx, categoryName)
-	if err == errs.ErrNotFound {
+	categoryIDExists, err := s.categoryRepo.Exists(ctx, itemDetail.CategoryID)
+	if !categoryIDExists {
 		return 0, errs.Error{
-			Err:     fmt.Errorf("get category id by name error: %w", err),
+			Err:     fmt.Errorf("category does not exist"),
 			Code:    400,
 			Message: fmt.Sprintf("%s: category does not exist", errs.StatusBadRequestMessage),
 		}
 	}
 	if err != nil {
 		return 0, errs.Error{
-			Err:     fmt.Errorf("get category id by name error: %w", err),
+			Err:     fmt.Errorf("check if category exists error: %w", err),
 			Code:    500,
 			Message: errs.StatusInternalServerErrorMessage,
 		}
 	}
-	itemDetail.CategoryID = categoryID
 
 	// create new item with itemName, if does not exist. otherwise use existing item.
 	// then create new item detail
@@ -146,18 +143,15 @@ func (s *ItemDetailService) GetAllFilter(ctx context.Context, filter *model.Item
 	return itemDetailViews, errs.NilError()
 }
 
-func (s *ItemDetailService) Update(ctx context.Context,
-	id int, itemDetail *model.ItemDetail,
-	itemName, groupName, categoryName string,
-) errs.Error {
+func (s *ItemDetailService) Update(ctx context.Context, id int, itemName string, itemDetail *model.ItemDetail) errs.Error {
 	errMsg := ""
 	switch {
 	case itemName == "":
 		errMsg = "item name is empty"
-	case groupName == "":
-		errMsg = "group name is empty"
-	case categoryName == "":
-		errMsg = "category name is empty"
+	case itemDetail.GroupID <= 0:
+		errMsg = "invalid group id"
+	case itemDetail.CategoryID == 0:
+		errMsg = "invalid category id"
 	case itemDetail.Cost <= 0:
 		errMsg = "cost must be greater than 0"
 	case itemDetail.Price <= 0:
@@ -173,58 +167,55 @@ func (s *ItemDetailService) Update(ctx context.Context,
 		}
 	}
 
-	itemID, err := s.itemRepo.GetIDByName(ctx, itemName)
-	if err == errs.ErrNotFound {
+	exists, err := s.repo.Exists(ctx, id)
+	if !exists {
 		return errs.Error{
-			Err:     fmt.Errorf("get item id by name error: %w", err),
-			Code:    400,
-			Message: fmt.Sprintf("%s: item does not exist", errs.StatusBadRequestMessage),
+			Err:     fmt.Errorf("item detail does not exist"),
+			Code:    404,
+			Message: errs.StatusNotFoundMessage,
 		}
 	}
 	if err != nil {
 		return errs.Error{
-			Err:     fmt.Errorf("get item id by name error: %w", err),
+			Err:     fmt.Errorf("check if item detail exists error: %w", err),
 			Code:    500,
 			Message: errs.StatusInternalServerErrorMessage,
 		}
 	}
-	itemDetail.ItemID = itemID
 
-	groupID, err := s.groupRepo.GetIDByName(ctx, groupName)
-	if err == errs.ErrNotFound {
+	groupIDExists, err := s.groupRepo.Exists(ctx, itemDetail.GroupID)
+	if !groupIDExists {
 		return errs.Error{
-			Err:     fmt.Errorf("get group id by name error: %w", err),
+			Err:     fmt.Errorf("group does not exist"),
 			Code:    400,
 			Message: fmt.Sprintf("%s: group does not exist", errs.StatusBadRequestMessage),
 		}
 	}
 	if err != nil {
 		return errs.Error{
-			Err:     fmt.Errorf("get group id by name error: %w", err),
+			Err:     fmt.Errorf("check if group exists error: %w", err),
 			Code:    500,
 			Message: errs.StatusInternalServerErrorMessage,
 		}
 	}
-	itemDetail.GroupID = groupID
 
-	categoryID, err := s.categoryRepo.GetIDByName(ctx, categoryName)
-	if err == errs.ErrNotFound {
+	categoryIDExists, err := s.categoryRepo.Exists(ctx, itemDetail.CategoryID)
+	if !categoryIDExists {
 		return errs.Error{
-			Err:     fmt.Errorf("get category id by name error: %w", err),
+			Err:     fmt.Errorf("category does not exist"),
 			Code:    400,
 			Message: fmt.Sprintf("%s: category does not exist", errs.StatusBadRequestMessage),
 		}
 	}
 	if err != nil {
 		return errs.Error{
-			Err:     fmt.Errorf("get category id by name error: %w", err),
+			Err:     fmt.Errorf("check if category exists error: %w", err),
 			Code:    500,
 			Message: errs.StatusInternalServerErrorMessage,
 		}
 	}
-	itemDetail.CategoryID = categoryID
 
-	err = s.repo.Update(ctx, id, itemDetail)
+	err = s.repo.Update(ctx, id, itemName, itemDetail)
 	if err == errs.ErrNotFound {
 		return errs.Error{
 			Err:     fmt.Errorf("update item detail error: %w", err),

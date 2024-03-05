@@ -28,6 +28,13 @@ func (s *GroupService) Create(ctx context.Context, name string) (int, errs.Error
 	}
 
 	id, err := s.repo.Create(ctx, name)
+	if err == errs.ErrUniqueConstraint {
+		return 0, errs.Error{
+			Err:     fmt.Errorf("create group error: %w", err),
+			Code:    400,
+			Message: fmt.Sprintf("%s: group name already exists", errs.StatusBadRequestMessage),
+		}
+	}
 	if err != nil {
 		return 0, errs.Error{
 			Err:     fmt.Errorf("create group error: %w", err),
@@ -89,6 +96,13 @@ func (s *GroupService) Update(ctx context.Context, id int, name string) errs.Err
 	}
 
 	err := s.repo.Update(ctx, id, name)
+	if err == errs.ErrUniqueConstraint {
+		return errs.Error{
+			Err:     fmt.Errorf("update group error: %w", err),
+			Code:    400,
+			Message: fmt.Sprintf("%s: group name already exists", errs.StatusBadRequestMessage),
+		}
+	}
 	if err == errs.ErrNotFound {
 		return errs.Error{
 			Err:     fmt.Errorf("update group error: %w", err),

@@ -35,28 +35,29 @@ type (
 	}
 
 	Category interface {
-		Create(ctx context.Context, name string) (int, error)      // create new category
-		Get(ctx context.Context, id int) (*model.Category, error)  // get category by id
-		GetIDByName(ctx context.Context, name string) (int, error) // get category id by name
-		GetAll(ctx context.Context) ([]*model.Category, error)     // get all categories
-		Update(ctx context.Context, id int, name string) error     // update category by id
-		Delete(ctx context.Context, id int) error                  // delete category by id
+		Create(ctx context.Context, name string) (int, error)     // create new category
+		Get(ctx context.Context, id int) (*model.Category, error) // get category by id
+		Exists(ctx context.Context, id int) (bool, error)         // check if category exists
+		GetAll(ctx context.Context) ([]*model.Category, error)    // get all categories
+		Update(ctx context.Context, id int, name string) error    // update category by id
+		Delete(ctx context.Context, id int) error                 // delete category by id
 	}
 
 	Group interface {
-		Create(ctx context.Context, name string) (int, error)      // create new group
-		Get(ctx context.Context, id int) (*model.Group, error)     // get group by id
-		GetIDByName(ctx context.Context, name string) (int, error) // get group id by name
-		GetAll(ctx context.Context) ([]*model.Group, error)        // get all groups
-		Update(ctx context.Context, id int, name string) error     // update group by id
-		Delete(ctx context.Context, id int) error                  // delete group by id
+		Create(ctx context.Context, name string) (int, error)  // create new group
+		Get(ctx context.Context, id int) (*model.Group, error) // get group by id
+		Exists(ctx context.Context, id int) (bool, error)      // check if group exists
+		GetAll(ctx context.Context) ([]*model.Group, error)    // get all groups
+		Update(ctx context.Context, id int, name string) error // update group by id
+		Delete(ctx context.Context, id int) error              // delete group by id
 	}
 
 	ItemDetail interface {
 		Create(ctx context.Context, itemDetail *model.ItemDetail, itemName string) (int, error)            // create new item (if needed) and new item detail
 		Get(ctx context.Context, id int) (*model.ItemDetailView, error)                                    // get item detail by id
+		Exists(ctx context.Context, id int) (bool, error)                                                  // check if item detail exists
 		GetAllFilter(ctx context.Context, filter *model.ItemDetailFilter) ([]*model.ItemDetailView, error) // get item detail list by filter
-		Update(ctx context.Context, id int, itemDetail *model.ItemDetail) error                            // update item detail by id
+		Update(ctx context.Context, id int, itemName string, itemDetail *model.ItemDetail) error           // update item detail by id
 		Delete(ctx context.Context, id int) error                                                          // delete item detail by id
 	}
 )

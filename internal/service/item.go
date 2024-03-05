@@ -28,6 +28,13 @@ func (s *ItemService) Create(ctx context.Context, name string) (int, errs.Error)
 	}
 
 	id, err := s.repo.Create(ctx, name)
+	if err == errs.ErrUniqueConstraint {
+		return 0, errs.Error{
+			Err:     fmt.Errorf("create item error: %w", err),
+			Code:    400,
+			Message: fmt.Sprintf("%s: item name already exists", errs.StatusBadRequestMessage),
+		}
+	}
 	if err != nil {
 		return 0, errs.Error{
 			Err:     fmt.Errorf("create item error: %w", err),
@@ -89,6 +96,13 @@ func (s *ItemService) Update(ctx context.Context, id int, name string) errs.Erro
 	}
 
 	err := s.repo.Update(ctx, id, name)
+	if err == errs.ErrUniqueConstraint {
+		return errs.Error{
+			Err:     fmt.Errorf("update item error: %w", err),
+			Code:    400,
+			Message: fmt.Sprintf("%s: item name already exists", errs.StatusBadRequestMessage),
+		}
+	}
 	if err == errs.ErrNotFound {
 		return errs.Error{
 			Err:     fmt.Errorf("update item error: %w", err),
