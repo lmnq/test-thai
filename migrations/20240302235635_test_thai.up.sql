@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS "tbl_item_details" (
     "sort" INTEGER NOT NULL,
     "created_at" TIMESTAMP NOT NULL DEFAULT now(),
     "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
-    "deleted_at" TIMESTAMP,
+    "deleted_at" TIMESTAMP
     -- CONSTRAINT "item_details_item_id_category_id_group_id" UNIQUE ("item_id", "category_id", "group_id")
 );
 

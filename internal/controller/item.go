@@ -72,7 +72,9 @@ func (c *itemController) getAll(ctx *fiber.Ctx) error {
 		return errorResponse(ctx, myerr.Code, myerr.Message)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(items)
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"items": items,
+	})
 }
 
 type itemUpdateRequest struct {
@@ -99,9 +101,7 @@ func (c *itemController) update(ctx *fiber.Ctx) error {
 		return errorResponse(ctx, myerr.Code, myerr.Message)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"id": id,
-	})
+	return ctx.SendStatus(fiber.StatusOK)
 }
 
 func (c *itemController) delete(ctx *fiber.Ctx) error {
@@ -117,7 +117,5 @@ func (c *itemController) delete(ctx *fiber.Ctx) error {
 		return errorResponse(ctx, myerr.Code, myerr.Message)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"id": id,
-	})
+	return ctx.SendStatus(fiber.StatusOK)
 }

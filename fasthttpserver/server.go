@@ -50,7 +50,7 @@ func (s *Server) start(port string) {
 	}
 
 	go func() {
-		err := s.server.ListenAndServe(port)
+		err := s.server.ListenAndServe(":" + port)
 		s.notify <- err
 	}()
 }

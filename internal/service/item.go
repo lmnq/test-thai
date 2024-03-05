@@ -68,7 +68,7 @@ func (s *ItemService) Get(ctx context.Context, id int) (*model.Item, errs.Error)
 
 func (s *ItemService) GetAll(ctx context.Context) ([]*model.Item, errs.Error) {
 	items, err := s.repo.GetAll(ctx)
-	if err == errs.ErrNotFound {
+	if errors.Is(err, errs.ErrNotFound) {
 		return nil, errs.Error{
 			Err:     fmt.Errorf("get all items error: %w", err),
 			Code:    404,

@@ -72,7 +72,9 @@ func (c *groupController) getAll(ctx *fiber.Ctx) error {
 		return errorResponse(ctx, myerr.Code, myerr.Message)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(groups)
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"groups": groups,
+	})
 }
 
 type groupUpdateRequest struct {
@@ -99,9 +101,7 @@ func (c *groupController) update(ctx *fiber.Ctx) error {
 		return errorResponse(ctx, myerr.Code, myerr.Message)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"id": id,
-	})
+	return ctx.SendStatus(fiber.StatusOK)
 }
 
 func (c *groupController) delete(ctx *fiber.Ctx) error {
@@ -117,7 +117,5 @@ func (c *groupController) delete(ctx *fiber.Ctx) error {
 		return errorResponse(ctx, myerr.Code, myerr.Message)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"id": id,
-	})
+	return ctx.SendStatus(fiber.StatusOK)
 }

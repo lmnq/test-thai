@@ -72,7 +72,9 @@ func (c *categoryController) getAll(ctx *fiber.Ctx) error {
 		return errorResponse(ctx, myerr.Code, myerr.Message)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(categories)
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"categories": categories,
+	})
 }
 
 type categoryUpdateRequest struct {
@@ -99,9 +101,7 @@ func (c *categoryController) update(ctx *fiber.Ctx) error {
 		return errorResponse(ctx, myerr.Code, myerr.Message)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"id": id,
-	})
+	return ctx.SendStatus(fiber.StatusOK)
 }
 
 func (c *categoryController) delete(ctx *fiber.Ctx) error {
@@ -117,7 +117,5 @@ func (c *categoryController) delete(ctx *fiber.Ctx) error {
 		return errorResponse(ctx, myerr.Code, myerr.Message)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"id": id,
-	})
+	return ctx.SendStatus(fiber.StatusOK)
 }

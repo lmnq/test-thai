@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/github"
 )
 
 const (
@@ -25,7 +27,7 @@ func Migrate(databaseURL string) {
 	)
 
 	for attempts > 0 {
-		m, err = migrate.New("file://migrations", databaseURL)
+		m, err = migrate.New("file://../migrations", databaseURL)
 		if err == nil {
 			break
 		}

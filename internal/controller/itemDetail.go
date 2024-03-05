@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/lmnq/test-thai/internal/model"
 	"github.com/lmnq/test-thai/internal/service"
@@ -18,7 +20,7 @@ func newItemDetailController(router fiber.Router, l logger.Logger, itemDetailSer
 		l: l,
 	}
 
-	r := router.Group("/item_detail")
+	r := router.Group("/item-detail")
 
 	r.Post("/", c.create)
 	r.Get("/:id", c.get)
@@ -78,10 +80,10 @@ func (c *itemDetailController) get(ctx *fiber.Ctx) error {
 }
 
 type itemDetailFilterParams struct {
-	ID           int    `query:"id"`
-	ItemName     string `query:"item_name"`
-	CategoryName string `query:"category_name"`
-	GroupName    string `query:"group_name"`
+	ID           string  `query:"id"`
+	ItemName     *string `query:"item_name"`
+	CategoryName *string `query:"category_name"`
+	GroupName    *string `query:"group_name"`
 }
 
 func (c *itemDetailController) getAllFilter(ctx *fiber.Ctx) error {
@@ -92,18 +94,34 @@ func (c *itemDetailController) getAllFilter(ctx *fiber.Ctx) error {
 		return errorResponse(ctx, 400, "query parser error")
 	}
 
-	itemDetails, myerr := c.s.GetAllFilter(ctx.Context(), &model.ItemDetailFilter{
-		ID:           &params.ID,
-		ItemName:     &params.ItemName,
-		CategoryName: &params.CategoryName,
-		GroupName:    &params.GroupName,
-	})
+	filter := &model.ItemDetailFilter{
+		ItemName:     params.ItemName,
+		CategoryName: params.CategoryName,
+		GroupName:    params.GroupName,
+	}
+
+	id := 0
+	if params.ID != "" {
+		idParam, err := strconv.Atoi(params.ID)
+		if err != nil {
+			c.l.Error(err, "get item detail id param error")
+			return errorResponse(ctx, 400, "get item detail id param error")
+		}
+		id = idParam
+	}
+	if id > 0 {
+		filter.ID = &id
+	}
+
+	itemDetails, myerr := c.s.GetAllFilter(ctx.Context(), filter)
 	if myerr.IsErr() {
 		c.l.Error(myerr.Err, "get item detail list error")
 		return errorResponse(ctx, myerr.Code, myerr.Message)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(itemDetails)
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"item_details": itemDetails,
+	})
 }
 
 type itemDetailUpdateRequest struct {
@@ -141,9 +159,7 @@ func (c *itemDetailController) update(ctx *fiber.Ctx) error {
 		return errorResponse(ctx, myerr.Code, myerr.Message)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"id": id,
-	})
+	return ctx.SendStatus(fiber.StatusOK)
 }
 
 func (c *itemDetailController) delete(ctx *fiber.Ctx) error {
@@ -159,7 +175,5 @@ func (c *itemDetailController) delete(ctx *fiber.Ctx) error {
 		return errorResponse(ctx, myerr.Code, myerr.Message)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"id": id,
-	})
+	return ctx.SendStatus(fiber.StatusOK)
 }

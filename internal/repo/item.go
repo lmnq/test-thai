@@ -96,16 +96,13 @@ func (r *ItemRepo) GetAll(ctx context.Context) ([]*model.Item, error) {
 		WHERE deleted_at IS NULL
 	`
 	rows, err := r.Pool.Query(ctx, q)
-	if err == pgx.ErrNoRows {
-		return nil, errs.ErrNotFound
-	}
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var item model.Item
+		item := model.Item{}
 		err := rows.Scan(
 			&item.ID,
 			&item.ItemName,
@@ -113,11 +110,19 @@ func (r *ItemRepo) GetAll(ctx context.Context) ([]*model.Item, error) {
 			&item.UpdatedAt,
 			&item.DeletedAt,
 		)
+
 		if err != nil {
 			return nil, err
 		}
 
 		items = append(items, &item)
+	}
+
+	if err := rows.Err(); err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, errs.ErrNotFound
+		}
+		return nil, err
 	}
 
 	return items, nil

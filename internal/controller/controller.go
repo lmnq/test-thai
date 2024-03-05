@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"github.com/gofiber/fiber/middleware"
 	"github.com/gofiber/fiber/v2"
+	fiberlog "github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/lmnq/test-thai/internal/service"
 	"github.com/lmnq/test-thai/logger"
@@ -11,7 +11,7 @@ import (
 func New(f *fiber.App, l logger.Logger, services *service.Service) {
 	// options
 	f.Use(recover.New())
-	f.Use(middleware.Logger())
+	f.Use(fiberlog.New())
 
 	// router
 	router := f.Group("/")

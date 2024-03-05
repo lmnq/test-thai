@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/lmnq/test-thai/database/postgres"
@@ -40,11 +41,12 @@ func (r *ItemDetailRepo) Create(ctx context.Context, itemDetail *model.ItemDetai
 		VALUES ($1)
 		ON CONFLICT (item_name)
 		WHERE deleted_at IS NULL
-		DO NOTHING
+		DO UPDATE SET item_name = excluded.item_name
 		RETURNING id
 	`
 	err = tx.QueryRow(ctx, q, itemName).Scan(&itemID)
 	if err != nil {
+		log.Println("AAAA", err)
 		return 0, err
 	}
 	itemDetail.ItemID = itemID
@@ -68,6 +70,7 @@ func (r *ItemDetailRepo) Create(ctx context.Context, itemDetail *model.ItemDetai
 	// 	return 0, errs.ErrUniqueConstraint
 	// }
 	if err != nil {
+		log.Println("BBBB", err)
 		return 0, err
 	}
 
@@ -82,24 +85,24 @@ func (r *ItemDetailRepo) Get(ctx context.Context, id int) (*model.ItemDetailView
 	var itemDetailView model.ItemDetailView
 	// join tbl_items and tbl_categories and tbl_groups to get itemDetailView
 	q := `SELECT 
-			id,
-			item_id,
+			itd.id,
+			itd.item_id,
 			i.item_name,
-			category_id,
+			itd.category_id,
 			c.category_name,
-			group_id,
+			itd.group_id,
 			g.group_name,
-			cost,
-			price,
-			sort,
-			created_at,
-			updated_at,
-			deleted_at
-		FROM tbl_item_details
-		JOIN tbl_items AS i ON tbl_item_details.item_id = tbl_items.id
-		JOIN tbl_categories AS c ON tbl_item_details.category_id = tbl_categories.id
-		JOIN tbl_groups AS g ON tbl_item_details.group_id = tbl_groups.id
-		WHERE id = $1 AND deleted_at IS NULL
+			itd.cost,
+			itd.price,
+			itd.sort,
+			itd.created_at,
+			itd.updated_at,
+			itd.deleted_at
+		FROM tbl_item_details AS itd
+		JOIN tbl_items AS i ON itd.item_id = i.id
+		JOIN tbl_categories AS c ON itd.category_id = c.id
+		JOIN tbl_groups AS g ON itd.group_id = g.id
+		WHERE itd.id = $1 AND itd.deleted_at IS NULL
 	`
 	err := r.Pool.QueryRow(ctx, q, id).Scan(
 		&itemDetailView.ID,
@@ -141,29 +144,29 @@ func (r *ItemDetailRepo) GetAllFilter(ctx context.Context, filter *model.ItemDet
 	var itemDetailViews []*model.ItemDetailView
 	// join tbl_items and tbl_categories and tbl_groups to get itemDetailView
 	q := `SELECT 
-			id,
-			item_id,
+			itd.id,
+			itd.item_id,
 			i.item_name,
-			category_id,
+			itd.category_id,
 			c.category_name,
-			group_id,
+			itd.group_id,
 			g.group_name,
-			cost,
-			price,
-			sort,
-			created_at,
-			updated_at,
-			deleted_at
-		FROM tbl_item_details
-		JOIN tbl_items AS i ON tbl_item_details.item_id = tbl_items.id
-		JOIN tbl_categories AS c ON tbl_item_details.category_id = tbl_categories.id
-		JOIN tbl_groups AS g ON tbl_item_details.group_id = tbl_groups.id
-		WHERE 1=1 AND deleted_at IS NULL
+			itd.cost,
+			itd.price,
+			itd.sort,
+			itd.created_at,
+			itd.updated_at,
+			itd.deleted_at
+		FROM tbl_item_details AS itd
+		JOIN tbl_items AS i ON itd.item_id = i.id
+		JOIN tbl_categories AS c ON itd.category_id = c.id
+		JOIN tbl_groups AS g ON itd.group_id = g.id
+		WHERE 1=1 AND itd.deleted_at IS NULL
 	`
 	var queryParams []interface{}
 	if filter.ID != nil {
 		queryParams = append(queryParams, filter.ID)
-		q += fmt.Sprintf(" AND id = $%d", len(queryParams))
+		q += fmt.Sprintf(" AND itd.id = $%d", len(queryParams))
 	}
 	if filter.ItemName != nil {
 		queryParams = append(queryParams, filter.ItemName)
